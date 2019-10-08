@@ -13,6 +13,7 @@ mu1 = [0;0];
 mu2 = [3;3];
 sigma1 = [1 0;0 1];
 sigma2 = sigma1;
+% Generate a gaussian distribution with specific parameters
 sample1 = sample_generator(nclass1,nMeasurements,mu1,sigma1).';
 sample2 = sample_generator(nclass2,nMeasurements,mu2,sigma2).';
 labeled_sample = sample_generator_hw2(totalSamples,nclass1,sample1,sample2);
@@ -67,17 +68,19 @@ labeled_sample = sample_generator_hw2(totalSamples,nclass1,sample1,sample2);
 fig3 = figure();
 hw2_gmm_plot(sample1,sample2,'Part 6: Means [0,0] [2,2] | Unequal Prior | Unequal Covariance')
 %% Likelihood
+% Calculates likelihood from multivariate pdf
 likelihood1 = mvnpdf(labeled_sample(:,1:2),mu1.',sigma1.');
 likelihood2 = mvnpdf(labeled_sample(:,1:2),mu2.',sigma2.');
+% Sanity check plot
 %hold on
 % fig7 = figure();
 % scatter3(labeled_sample(:,1),labeled_sample(:,2),likelihood1,'kx')
 % fig8 = figure();
 % scatter3(labeled_sample(:,1),labeled_sample(:,2),likelihood2,'r+')
-
+% Calculates MAP for class 1 and 2
 MAP1 = likelihood1 * prior;
 MAP2 = likelihood2 * (1-prior);
-
+% Use MAP to predict class, evaluate performance, and plot
 class_predict = MAP1<MAP2;
 correct = sum(class_predict==labeled_sample(:,3))/totalSamples
 error = 1-correct
@@ -88,3 +91,41 @@ predicted_sample(:,3) = class_predict;
 fig8 = figure();
 hw2_gmm_plot(labeled_sample(class_predict==0,1:2),labeled_sample(class_predict==1,1:2),...
     'MAP Prediction for Part 6')
+
+%% Question 3
+labels = labeled_sample(:,3);
+sample = labeled_sample(:,1:2);
+% Find centroid
+centroid1 = [mean(sample(labels==0,1)),mean(sample(labels==0,2))];
+centroid2 = [mean(sample(labels==1,1)),mean(sample(labels==1,2))];
+% Sanity Check
+hw2_gmm_plot(sample(class_predict==0,1:2),sample(class_predict==1,1:2),...
+    'MAP Prediction for Part 6')
+hold on
+plot(centroid1(1),centroid1(2),'*b')
+plot(centroid2(1),centroid2(2),'*b')
+% Find between-class scatter
+mu = [mean(sample(:,1)),mean(sample(:,2))];
+m1 = sum(sample(labels==0,1:2)/nclass1,1);
+m2 = sum(sample(labels==1,1:2)/nclass2,1);
+SB = (m1 - m2).' * (m1 - m2);
+% Find within-class scatter
+S1 = (sample-m1).' * (sample-m1);
+S2 = (sample-m1).' * (sample-m2);
+SW = S1 + S2;
+% Find w0
+A = inv(SW) * SB;
+w = [0.5;0.5];
+for i=1:10
+    w = A * w;
+    w = w/max(w);
+end
+w
+w0 = inv(SW) * (m1 - m2).';
+
+% Projection onto 1 dimension
+projection = sample * w;
+fig = figure();
+bar(1:nclass1,projection(labels==0))
+hold on
+bar(nclass1+1:totalSamples,projection(labels==1))
