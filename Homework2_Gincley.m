@@ -100,10 +100,12 @@ centroid1 = [mean(sample(labels==0,1)),mean(sample(labels==0,2))];
 centroid2 = [mean(sample(labels==1,1)),mean(sample(labels==1,2))];
 % Sanity Check
 hw2_gmm_plot(sample(class_predict==0,1:2),sample(class_predict==1,1:2),...
-    'MAP Prediction for Part 6')
+    'Centroid Check')
 hold on
 plot(centroid1(1),centroid1(2),'*b')
-plot(centroid2(1),centroid2(2),'*b')
+plot(centroid2(1),centroid2(2),'*g')
+hold off
+
 % Find between-class scatter
 mu = [mean(sample(:,1)),mean(sample(:,2))];
 m1 = sum(sample(labels==0,1:2)/nclass1,1);
@@ -111,7 +113,7 @@ m2 = sum(sample(labels==1,1:2)/nclass2,1);
 SB = (m1 - m2).' * (m1 - m2);
 % Find within-class scatter
 S1 = (sample-m1).' * (sample-m1);
-S2 = (sample-m1).' * (sample-m2);
+S2 = (sample-m2).' * (sample-m2);
 SW = S1 + S2;
 % Find w0
 A = inv(SW) * SB;
@@ -120,12 +122,37 @@ for i=1:10
     w = A * w;
     w = w/max(w);
 end
-w
+w;
 w0 = inv(SW) * (m1 - m2).';
 
 % Projection onto 1 dimension
 projection = sample * w;
-fig = figure();
-bar(1:nclass1,projection(labels==0))
+
+% Evaluate LDA model, fisher
+model = fitcdiscr(sample,labels);
+[fisher,scores] = predict(model,sample);
+f_nclass1 = totalSamples - sum(fisher);
+f_nclass2 = sum(fisher);
+nErrors = sum(fisher(:,1) ~= labels);
+errorRate = nErrors / totalSamples
+% Plot fisher score on 1D projection
+figX = figure();
+sgtitle(sprintf('LDA Fisher Scores and Decision Labels; Error rate = %.3f',errorRate))
+subplot(1,2,1)
 hold on
-bar(nclass1+1:totalSamples,projection(labels==1))
+scatter(projection(fisher==0),scores(fisher==0,1),'kx')
+scatter(projection(fisher==1),scores(fisher==1,1),'r+')
+hold off
+ylabel('Fisher Score'); xlabel('1D Projection'); title('Fisher Score against 1D Projection Value');
+legend('Class 1', 'Class 2');
+
+% fig = figure();
+% lim = [-4 8];
+% scatter(sample(:,1),sample(:,2),3,scores(:,1),'+')
+% xlabel('x1'); ylabel('x2')
+% xlim(lim); ylim(lim);
+% title('Class 1 Fisher Classification Score')
+% c = colorbar;
+subplot(1,2,2)
+hw2_gmm_plot(sample(fisher==0,:),sample(fisher==1,:),...
+    'Fisher Prediction for Part 6')
