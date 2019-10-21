@@ -12,31 +12,34 @@ B = -6;
 for i = 1:11
     gamma(i) = 10^(B+i);
 end
-I_g = gamma(6)^2*eye(4);
-I_s = sigma^2*eye(4);
+g = 4
+I_g = gamma(g)^2*eye(4);
+I_s = sigma^2;
 a = 1;
 b = -0.1;
 c = -0.25;
 d = 0.025;
 wTrue = [a,b,c,d]';
-v = mvnrnd(mu,sigma,10);
+n_samples = 10;
+v = mvnrnd(mu,sigma,n_samples);
 prior = mvnrnd(muVector, I_g, 1)
-y = zeros(10,1);
-for i = 1:10
+y = zeros(n_samples,1);
+x = y;
+for i = 1:n_samples
     x(i,1) = unifrnd(-1,1);
     y(i) = (a*x(i)^3)+(b*x(i)^2)+(c*x(i))+d;
 end
 D = [x,y];
-
 %%
-likelihood = pdf('Normal',y,mu,sigma);
-loglikelihood = log(likelihood);
-logprior = log(pdf('Normal',prior,muVector,I_g));
-obj = loglikelihood + logprior;
-WMAP = inv(I_s + x'*x*I_g) * (y'*x*I_g);
-%obj = y/sigma^2 + x/gamma^2
+% likelihood = pdf('Normal',y,mu,sigma);
+% loglikelihood = log(likelihood);
+% logprior = log(pdf('Normal',prior,muVector,I_g));
+% obj = loglikelihood + logprior;
+% WMAP = inv(I_s + x'*x*I_g) * (y'*x*I_g);
+% obj = y/sigma^2 + x.^2/I_g
+WMAP = diag(I_g*sum(y) / (I_g*n_samples + I_s))
 
-
+sqError = norm(wTrue - WMAP)^2
 % W_test = repmat(est,[4 1]);
 % %W_test = repmat(0.5,[4 1]);
 % XT = zeros(4,1);
