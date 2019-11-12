@@ -3,6 +3,7 @@
 % Benjamin Gincley
 % 8 November 2019
 %% Generate Samples
+tic
 rng(0);
 nClasses = 2;
 prior = [0.35;0.65];
@@ -63,7 +64,7 @@ for i = 1:nC
     lossGauSVMScale(i) = kfoldLoss(gauSVMModel);
 end
 [minVal(3),minIdx(3)] = min(lossGauSVMScale);
-optimScaleGau = cc(minIdx(3));
+optimScaleGau = c(minIdx(3));
 
 figure(); hold on
 plot(c,lossLinSVM)
@@ -136,3 +137,4 @@ ylabel('x2')
 title('Optimized Linear and Guassian Kernel SVMs evaluated using 1000 new test points')
 xlim(lims)
 ylim(lims)
+toc
